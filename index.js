@@ -19,6 +19,21 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+function varifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(403).send("unauthorized access ");
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN, function (error, decoded) {
+    if (error) {
+      return res.status(403).send({ message: "forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 // crud operation running here
 
 async function run() {
@@ -68,8 +83,14 @@ async function run() {
     app.delete('/bookings:id/:id')delete one info from this convention
 
     */
-    app.get("/bookings", async (req, res) => {
+    app.get("/bookings", varifyJWT, async (req, res) => {
       const email = req.query.email;
+      const decodedEmail = req.decoded.email;
+
+      if (email != decodedEmail) {
+        return res.status(403).send({ message: " forbidden access " });
+      }
+
       const query = { email: email };
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings);
@@ -77,6 +98,7 @@ async function run() {
 
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
+
       const query = {
         appointmentDate: booking.appointmentDate,
         email: booking.email,
