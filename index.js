@@ -43,6 +43,7 @@ async function run() {
       .collection("ApointmentOption");
     const bookingCollection = client.db("doctorPortal").collection("bookings");
     const usersCollection = client.db("doctorPortal").collection("users");
+    const doctorCollection = client.db("doctorPortal").collection("doctors");
 
     //fetching data from mongobd
 
@@ -69,6 +70,15 @@ async function run() {
         option.slots = remainingSlots;
       });
       res.send(options);
+    });
+
+    app.get("/appointmentSpecialty", async (req, res) => {
+      const query = {};
+      const result = await appointmentOptionCollection
+        .find(query)
+        .project({ name: 1 })
+        .toArray();
+      res.send(result);
     });
 
     // for any api update or website problem let's do some extra code
@@ -120,7 +130,7 @@ async function run() {
       const user = await usersCollection.findOne(query);
       if (user) {
         const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, {
-          expiresIn: "1h",
+          expiresIn: "24h",
         });
         return res.send({ accesstoken: token });
       }
@@ -168,6 +178,17 @@ async function run() {
         options
       );
       res.send(result);
+    });
+    app.post("/doctors", async (req, res) => {
+      const doctor = req.body;
+      const result = await doctorCollection.insertOne(doctor);
+      res.send(result);
+    });
+
+    app.get("/doctors", async (req, res) => {
+      const query = {};
+      const doctors = await doctorCollection.find(query).toArray();
+      res.send(doctors);
     });
   } finally {
   }
